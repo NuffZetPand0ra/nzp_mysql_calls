@@ -1,8 +1,5 @@
-<?php
-//todo: lav order by funktionalitet på select methods
-//todo: flere fejlmeddelelser på select methods
-
-
+ï»¿<?php
+//todo: lav order by funktionalitet pÃ¥ select methods
 
 // Released under Creative Commons license. Project startet by NuffZetPandora.
 // ver 0.1.2
@@ -19,17 +16,31 @@
 // 0.1.3
 //	added method selectRow.
 //	added method buildInsertQuery.
+// 0.1.4
+//	adjusted errorhandling to the more oop oriented Exceptions.
+//	added support for normal SQL queries in select methods.
 
 class db{
 	private $con;
 	function __construct($dbHost="localhost", $dbUser="root", $dbPassword="", $dbDatabase=""){
-		$this->con = mysql_pconnect($dbHost, $dbUser, $dbPassword) or die("Couldn't find host! ".mysql_error());
-		mysql_select_db($dbDatabase, $this->con) or die("Couldn't select database! ".mysql_error());
+		if($this->con = mysql_pconnect($dbHost, $dbUser, $dbPassword)){
+			if(mysql_select_db($dbDatabase, $this->con)){
+				return true;
+			}
+			else{
+				throw new Exception("Couldn't select database! ".mysql_error());
+			}
+		}else{
+			throw new Exception("Couldn't find host! ".mysql_error());
+		}
 	}
 	function close(){mysql_close($this->con);}
 	function query($query){
-		$result = mysql_query($query, $this->con) or die("'$query'<br>The query couldn't be excuted! ".mysql_error());
-		return $result;
+		if($result = mysql_query($query, $this->con)){
+			return $result;
+		}else{
+			throw new Exception("$query\n<br>The query couldn't be excuted!\n<br>".mysql_error());
+		}
 	}
 	function buildInsertQuery($tableAndColumns, $data){		
 		//data can be array
@@ -59,6 +70,9 @@ class db{
 	// methods for selecting
 	function buildSelectQuery($table, $fields="*", $limiter="", $joins=""){
 		//$joins needs array(table, type, key) or array(array(table, type, key), array(table, type, key))
+		if(substr(trim($table),0,strlen("SELECT")) === "SELECT"){
+			return $table;
+		}
 		$query = "SELECT $fields FROM $table";
 		if(is_array($joins)){
 			if(is_array($joins[0])){
